@@ -14,6 +14,12 @@ F: feature
 
 --------------------------------------------------------------------------------
 
+* Version 0.1.0 (2020-11-29)
+B: Add promhttp dependency (prometheus.Handler deprecated by promhttp.Handler)
+B: Improve error handling if close body is not nil
+E: Return descriptive error message with HTTP response status codes
+E: Remove white spaces from service types
+
 * Version 0.0.2 (2017-10-16)
 F: Change deploy key
 
