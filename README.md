@@ -65,14 +65,14 @@ To run the application, simply execute the Go binary.
 
 ### Parameters ###
 
-Parameter | Description | Default
---- | --- | ---
-`listen_address` | address and port to bind | localhost:9388
-`metrics_path` | relative path to expose metrics | /metrics
-`ignore_ssl` | whether of not to ignore ssl errors | false
-`monit_scrape_uri` | uri to get monit status | http://localhost:2812/_status?format=xml&level=full
-`monit_user` | user for monit basic auth, if needed | none
-`monit_password` | password for monit status, if needed | none
+Parameter | Description | Type | Default
+--- | --- | --- | ---
+`listen_address` | address and port to bind | String | localhost:9388
+`metrics_path` | relative path to expose metrics | String | /metrics
+`ignore_ssl` | whether of not to ignore ssl errors | Boolean | false
+`monit_scrape_uri` | uri to get monit status | String | http://localhost:2812/_status?format=xml&level=full
+`monit_user` | user for monit basic auth, if needed | String | none
+`monit_password` | password for monit status, if needed | String | none
 
 ## License
 
