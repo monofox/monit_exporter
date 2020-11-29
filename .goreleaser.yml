@@ -1,0 +1,25 @@
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod download
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - freebsd
+      - linux
+      - openbsd
+    goarch:
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - 6
+      - 7
+archives:
+  - replacements:
+      freebsd: FreeBSD
+      linux: Linux
+      openbsd: OpenBSD
+checksum:
+  name_template: "sha256sums.txt"
