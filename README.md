@@ -82,8 +82,6 @@ See `LICENSE` file for more information.
 
 ## Contact
 
-Author: l@liv.io
-
 Project: [monit_exporter](https://github.com/liv-io/monit_exporter)
 
 ## Credits
