@@ -10,6 +10,19 @@ The headers are:
 - enhancements
 - features
 
+## 0.2.0 (2023-04-11)
+
+### Changes
+
+- Rebuild monit_exporter for OpenBSD 7.3
+
+### Enhancements
+
+- Build monit_exporter with Go version 1.20.3
+- Resolve GoReleaser deprecation notices \
+  `--rm-dist` has been deprecated in favor of `--clean` \
+  `replacements` will be removed from the `archives` section
+
 ## 0.1.0 (2020-11-29)
 
 ### Bugs
