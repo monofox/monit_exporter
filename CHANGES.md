@@ -10,6 +10,12 @@ The headers are:
 - enhancements
 - features
 
+## 0.2.1 (2023-07-27)
+
+### Enhancements
+
+- Build monit_exporter with Go version 1.20.6
+
 ## 0.2.0 (2023-04-11)
 
 ### Changes
