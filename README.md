@@ -60,7 +60,7 @@ go build
 
 ### Update
 
-To rebuild the application with the latest Go release, execute the following steps:
+To rebuild the application with the latest Go release, execute the following commands:
 ```
 export GO_VERSION="1.21.3"
 cd ~
