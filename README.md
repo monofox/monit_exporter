@@ -18,10 +18,7 @@
   * [Installation](#installation)
   * [Update](#update)
 * [Usage](#usage)
-* [Roadmap](#roadmap)
-* [Contributing](#contributing)
 * [License](#license)
-* [Contact](#contact)
 * [Credits](#credits)
 * [Appendix](#appendix)
 
