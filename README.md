@@ -108,6 +108,7 @@ Project: [monit_exporter](https://github.com/liv-io/monit_exporter)
 Acknowledgements:
 * [commercetools](https://github.com/commercetools/monit_exporter)
 * [delucks](https://github.com/delucks/monit_exporter)
+* [chaordic](https://github.com/chaordic/monit_exporter)
 
 <!-- shields.io -->
 [contributors-shield]: https://img.shields.io/github/contributors/liv-io/monit_exporter.svg?style=flat

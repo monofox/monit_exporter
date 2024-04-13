@@ -1,2 +1,6 @@
+.idea/
+dist/
+bin/
+.env
 config.toml
 monit_exporter
