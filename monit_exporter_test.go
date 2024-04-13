@@ -1,13 +1,15 @@
 package main
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"fmt"
-	"io/ioutil"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -20,7 +22,9 @@ const (
 func TestMonitStatus(t *testing.T) {
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(monitStatus))
+		if _, err := w.Write([]byte(monitStatus)); err != nil {
+			log.Error(err)
+		}
 	})
 	server := httptest.NewServer(handler)
 	config := ParseConfig()
@@ -67,7 +71,7 @@ func TestHttpQueryExporter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Error(err)
 	}
@@ -82,10 +86,11 @@ func TestHttpQueryExporter(t *testing.T) {
 func AuthHandler(w http.ResponseWriter, r *http.Request) {
 	user, pass, _ := r.BasicAuth()
 	if user == monitUser && pass == monitPassword {
-		w.Write([]byte(monitStatus))
-
+		if _, err := w.Write([]byte(monitStatus)); err != nil {
+			log.Error(err)
+		}
 	} else {
-		http.Error(w, "Unauthorized.", 401)
+		http.Error(w, "Unauthorized.", http.StatusUnauthorized)
 	}
 }
 
