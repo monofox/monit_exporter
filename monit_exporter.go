@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -30,8 +31,6 @@ const (
 	SERVICE_TYPE_PROGRAM    = 7
 	SERVICE_TYPE_NET        = 8
 )
-
-var configFile = flag.String("conf", "./config.toml", "Configuration file for exporter")
 
 var serviceTypes = map[int]string{
 	SERVICE_TYPE_FILESYSTEM: "filesystem",
@@ -188,9 +187,14 @@ func ParseMonitStatus(data []byte) (monitXML, error) {
 
 // ParseConfig parse exporter binary options from command line
 func ParseConfig() *Config {
+	flag.String("conf", "./config.toml", "Configuration file for exporter")
 	flag.Parse()
 
 	v := viper.New()
+
+	// Provide all configurations as environment variable as well.
+	v.SetEnvPrefix(strings.ToUpper(namespace))
+	v.AutomaticEnv()
 
 	v.SetDefault("listen_address", "0.0.0.0:9388")
 	v.SetDefault("metrics_path", "/metrics")
@@ -198,8 +202,9 @@ func ParseConfig() *Config {
 	v.SetDefault("monit_scrape_uri", "http://localhost:2812/_status?format=xml&level=full")
 	v.SetDefault("monit_user", "")
 	v.SetDefault("monit_password", "")
-	v.SetConfigFile(*configFile)
+	v.SetConfigFile(flag.Lookup("conf").Value.String())
 	v.SetConfigType("toml")
+
 	err := v.ReadInConfig() // Find and read the config file
 	if err != nil {         // Handle errors reading the config file
 		log.Printf("Error reading config file: %s. Using defaults.", err)
@@ -339,7 +344,7 @@ func (e *Exporter) scrape() error {
 					e.checkMem.With(
 						prometheus.Labels{
 							"check_name": service.Name,
-							"type":       "kilobyteTotal",
+							"type":       "kilobyte_total",
 						}).Set(float64(service.Memory.KilobyteTotal * 1024))
 					e.checkCPU.With(
 						prometheus.Labels{
