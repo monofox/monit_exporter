@@ -60,6 +60,7 @@ type monitService struct {
 	DiskRead     monitServiceDisk   `xml:"read"`
 	ServiceTimes monitServiceTime   `xml:"servicetime"`
 	Ports        []monitServicePort `xml:"port"`
+	UnixSockets  []monitServicePort `xml:"unix"`
 	Link         monitServiceLink   `xml:"link"`
 }
 
@@ -88,6 +89,7 @@ type monitServiceTime struct {
 
 type monitServicePort struct {
 	Hostname     string  `xml:"hostname"`
+	Path         string  `xml:"path"`
 	Portnumber   string  `xml:"portnumber"`
 	Protocol     string  `xml:"protocol"`
 	Type         string  `xml:"type"`
@@ -273,9 +275,9 @@ func NewExporter(c *Config) (*Exporter, error) {
 		checkPortRespTimes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "service_port_response_times",
-			Help:      "Monit service port checks response times",
+			Help:      "Monit service port and unix socket checks response times",
 		},
-			[]string{"check_name", "hostname", "port", "protocol", "type"},
+			[]string{"check_name", "hostname", "path", "port", "protocol", "type", "uri"},
 		),
 		checkLinkState: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -392,13 +394,31 @@ func (e *Exporter) scrape() error {
 
 				// Port checks
 				for _, port := range service.Ports {
+					var uri = fmt.Sprintf("%s://%s:%s", strings.ToLower(port.Type), port.Hostname, port.Portnumber)
 					e.checkPortRespTimes.With(
 						prometheus.Labels{
 							"check_name": service.Name,
 							"type":       port.Type,
 							"hostname":   port.Hostname,
+							"path":       "",
 							"port":       port.Portnumber,
 							"protocol":   port.Protocol,
+							"uri":        uri,
+						}).Set(float64(port.Responsetime))
+				}
+
+				// Unix socket checks
+				for _, port := range service.UnixSockets {
+					var uri = fmt.Sprintf("unix://%s", port.Path)
+					e.checkPortRespTimes.With(
+						prometheus.Labels{
+							"check_name": service.Name,
+							"type":       "UNIX",
+							"hostname":   "",
+							"path":       port.Path,
+							"port":       "",
+							"protocol":   port.Protocol,
+							"uri":        uri,
 						}).Set(float64(port.Responsetime))
 				}
 			}
