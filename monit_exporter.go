@@ -45,23 +45,32 @@ var serviceTypes = map[int]string{
 }
 
 type monitXML struct {
+	MonitServer   monitServer    `xml:"server"`
 	MonitServices []monitService `xml:"service"`
+}
+
+type monitServer struct {
+	Hostname string `xml:"localhostname"`
+	Uptime   int64  `xml:"uptime"`
+	Version  string `xml:"version"`
 }
 
 // Simplified structure of monit check.
 type monitService struct {
-	Type         int                `xml:"type,attr"`
-	Name         string             `xml:"name"`
-	Status       int                `xml:"status"`
-	Monitored    string             `xml:"monitor"`
-	Memory       monitServiceMem    `xml:"memory"`
 	CPU          monitServiceCPU    `xml:"cpu"`
-	DiskWrite    monitServiceDisk   `xml:"write"`
 	DiskRead     monitServiceDisk   `xml:"read"`
-	ServiceTimes monitServiceTime   `xml:"servicetime"`
-	Ports        []monitServicePort `xml:"port"`
-	UnixSockets  []monitServicePort `xml:"unix"`
+	DiskWrite    monitServiceDisk   `xml:"write"`
 	Link         monitServiceLink   `xml:"link"`
+	Memory       monitServiceMem    `xml:"memory"`
+	Monitored    string             `xml:"monitor"`
+	Name         string             `xml:"name"`
+	Ports        []monitServicePort `xml:"port"`
+	ServiceTimes monitServiceTime   `xml:"servicetime"`
+	Status       int                `xml:"status"`
+	Type         int                `xml:"type,attr"`
+	UnixSockets  []monitServicePort `xml:"unix"`
+	Uptime       int64              `xml:"uptime"`
+	Icmp         monitServiceIcmp   `xml:"icmp"`
 }
 
 type monitServiceMem struct {
@@ -110,6 +119,11 @@ type monitServiceLinkDirection struct {
 	Errors  monitNetworkCount `xml:"errors"`
 }
 
+type monitServiceIcmp struct {
+	Type         string  `xml:"type"`
+	Responsetime float64 `xml:"responsetime"`
+}
+
 type monitBytes struct {
 	Count int `xml:"count"`
 	Total int `xml:"total"`
@@ -127,6 +141,8 @@ type Exporter struct {
 	client *http.Client
 
 	up                 prometheus.Gauge
+	version            *prometheus.GaugeVec
+	checkUptime        *prometheus.GaugeVec
 	checkStatus        *prometheus.GaugeVec
 	checkMem           *prometheus.GaugeVec
 	checkCPU           *prometheus.GaugeVec
@@ -237,6 +253,20 @@ func NewExporter(c *Config) (*Exporter, error) {
 			Name:      "up",
 			Help:      "Monit status availability",
 		}),
+		version: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "version",
+			Help:      "Monit version",
+		},
+			[]string{"version"},
+		),
+		checkUptime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "service_uptime",
+			Help:      "Monit service and server uptime",
+		},
+			[]string{"check_name", "type"},
+		),
 		checkStatus: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "service_check",
@@ -300,6 +330,8 @@ func NewExporter(c *Config) (*Exporter, error) {
 // implements prometheus.Collector.
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.up.Describe(ch)
+	e.version.Describe(ch)
+	e.checkUptime.Describe(ch)
 	e.checkStatus.Describe(ch)
 	e.checkCPU.Describe(ch)
 	e.checkMem.Describe(ch)
@@ -326,6 +358,15 @@ func (e *Exporter) scrape() error {
 			log.Errorf("Error parsing data from monit: %v\n%s", err, data)
 		} else {
 			e.up.Set(1)
+			e.checkUptime.With(
+				prometheus.Labels{
+					"check_name": parsedData.MonitServer.Hostname,
+					"type":       "server",
+				}).Set(float64(parsedData.MonitServer.Uptime))
+			e.version.With(
+				prometheus.Labels{
+					"version": parsedData.MonitServer.Version,
+				}).Set(1)
 			// Constructing metrics
 			for _, service := range parsedData.MonitServices {
 				e.checkStatus.With(prometheus.Labels{"check_name": service.Name, "type": serviceTypes[service.Type], "monitored": service.Monitored}).Set(float64(service.Status))
@@ -336,7 +377,7 @@ func (e *Exporter) scrape() error {
 						"monitored":  service.Monitored,
 					}).Set(float64(service.Status))
 
-				// Memory + CPU only for specifiy status types (cf. monit/xml.c)
+				// Memory + CPU + Uptime only for specifiy status types (cf. monit/xml.c)
 				if service.Type == SERVICE_TYPE_PROCESS || service.Type == SERVICE_TYPE_SYSTEM {
 					e.checkMem.With(
 						prometheus.Labels{
@@ -358,6 +399,11 @@ func (e *Exporter) scrape() error {
 							"check_name": service.Name,
 							"type":       "percentage_total",
 						}).Set(float64(service.CPU.PercentTotal))
+					e.checkUptime.With(
+						prometheus.Labels{
+							"check_name": service.Name,
+							"type":       serviceTypes[service.Type],
+						}).Set(float64(service.Uptime))
 				}
 				if service.Type == SERVICE_TYPE_PROCESS || service.Type == SERVICE_TYPE_FILESYSTEM {
 					e.checkDiskWrite.With(
@@ -390,6 +436,20 @@ func (e *Exporter) scrape() error {
 						}).Set(float64(service.Link.State))
 					e.addNetLinkElement(&service, "download", &service.Link.Download)
 					e.addNetLinkElement(&service, "upload", &service.Link.Upload)
+				}
+
+				// ICMP checks
+				if service.Type == SERVICE_TYPE_HOST && service.Icmp.Type != "" {
+					e.checkPortRespTimes.With(
+						prometheus.Labels{
+							"check_name": service.Name,
+							"type":       "ICMP",
+							"hostname":   "",
+							"path":       "",
+							"port":       "",
+							"protocol":   strings.ToUpper(service.Icmp.Type),
+							"uri":        "",
+						}).Set(float64(service.Icmp.Responsetime))
 				}
 
 				// Port checks
@@ -458,6 +518,8 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.checkStatus.Reset()
 	if err := e.scrape(); err == nil {
 		e.up.Collect(ch)
+		e.version.Collect(ch)
+		e.checkUptime.Collect(ch)
 		e.checkStatus.Collect(ch)
 		e.checkMem.Collect(ch)
 		e.checkCPU.Collect(ch)

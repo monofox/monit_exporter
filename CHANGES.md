@@ -10,7 +10,7 @@ The headers are:
 - Enhancements
 - Features
 
-## 0.3.0 (2024-04-xx)
+## 0.3.0 (2024-04-14)
 
 ### Bugs
 - Catching scrape errors
@@ -35,12 +35,15 @@ The headers are:
 - Added extraction of:
   - port response times
   - unix socket response times
+  - ICMP response times (hosts)
   - CPU usage
   - Memory usage
   - Disk write metrics
   - Disk read metrics
   - I/O service times
   - Network link metrics
+  - Uptime metrics
+  - Monit version information
 - Added option in order to ignore TLS certificate validation (restricted and not recommended)
 
 ## 0.2.2 (2023-10-22)
