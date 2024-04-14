@@ -1,14 +1,47 @@
 # CHANGES
 
-This file lists changes made to the Ansible role. It follows semantic versioning
+This file lists changes made to the monit exporter. It follows semantic versioning
 guidelines. The content is sorted in reverse chronological order and formatted
 to allow easy grepping by scripts.
 
 The headers are:
-- bugs
-- changes
-- enhancements
-- features
+- Bugs
+- Changes
+- Enhancements
+- Features
+
+## 0.3.0 (2024-04-xx)
+
+### Bugs
+- Catching scrape errors
+
+### Changes
+- Breaking change: changing type names in compliance to Monit service type names (`programPid` => `process`, `programPath` => `program`, `remoteHost` => `host`)
+- Earlier, by default the exporter listened on localhost. In future, it will listen on `0.0.0.0:9388` by default. This enhance the use within containerized environment.
+- Breaking change: some metrics were renamed. E.g.:
+  - `monit_exporter_up` => `monit_up`
+  - `monit_exporter_service_check` => `monit_service_check`
+- Upgraded third party depenencies
+- Upgraded regular go version to 1.21.9
+
+### Enhancements
+
+- Adding Dockerfile for easier deployment.
+- Providing workflow for automatic docker image generation in Github container registry.
+- Extended documentation via README.md of provided features, installation, configuration.
+
+### Features
+- Adding support of environment variables for configuration.
+- Added extraction of:
+  - port response times
+  - unix socket response times
+  - CPU usage
+  - Memory usage
+  - Disk write metrics
+  - Disk read metrics
+  - I/O service times
+  - Network link metrics
+- Added option in order to ignore TLS certificate validation (restricted and not recommended)
 
 ## 0.2.2 (2023-10-22)
 
